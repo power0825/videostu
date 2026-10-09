@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EVERKNIT Video Studio — online</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div id="gate" class="gate" hidden>
+  <form id="gate-form" class="gate-card">
+    <span class="eyebrow">EVERKNIT · CLASSROOM</span>
+    <h1>Enter the class code</h1>
+    <p>The code is given out in the session. It keeps this link from being used by anyone who stumbles onto it.</p>
+    <input id="gate-code" type="password" autocomplete="off" placeholder="Class code" required>
+    <button class="primary" type="submit">Open the studio</button>
+    <p id="gate-error" class="gate-error" role="alert"></p>
+  </form>
+</div>
+
+<main id="app" hidden>
+  <header class="topbar">
+    <div>
+      <span class="eyebrow">EVERKNIT TEXTILE INDUSTRIES · BATU PAHAT</span>
+      <h1>From a brief to a fifteen-second film.</h1>
+      <p class="lede">Four shots, planned by the model, drawn one frame at a time, then stitched together in the cloud. Everything you write is kept in this browser only.</p>
+    </div>
+    <button id="reset" class="ghost" type="button">Start over</button>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2><span class="step">1</span> The brief</h2>
+      <span id="brief-status" class="tag">Not planned yet</span>
+    </div>
+    <label class="field">
+      <span>What is the film about?</span>
+      <textarea id="brief" rows="5" maxlength="4000"></textarea>
+      <small>Name the fabric, the garment it becomes, the setting and anything that must stay true. The four shots are planned from this and nothing else.</small>
+    </label>
+
+    <div class="row">
+      <label class="field">
+        <span>Reference image</span>
+        <input id="reference" type="file" accept="image/png,image/jpeg,image/webp">
+        <small>A photograph of the fabric. It is shrunk in your browser to 1600px before it is sent.</small>
+      </label>
+      <div class="field">
+        <span>Shape</span>
+        <div id="aspects" class="chips"></div>
+      </div>
+    </div>
+    <div id="reference-preview" class="reference" hidden><img id="reference-img" alt="The reference fabric you uploaded"><span id="reference-size"></span></div>
+
+    <div class="actions">
+      <button id="plan" class="primary" type="button">Plan the four shots</button>
+      <span id="plan-note" class="note"></span>
+    </div>
+
+    <details class="reveal">
+      <summary>What the model is told</summary>
+      <p class="reveal-note">This is the whole instruction the planning model receives, agent rules and method included. Nothing is hidden, and changing it changes every film the class makes.</p>
+      <pre id="storyboard-prompt"></pre>
+    </details>
+  </section>
+
+  <section id="shots-panel" class="panel" hidden>
+    <div class="panel-head">
+      <h2><span class="step">2</span> The four shots</h2>
+      <span id="shots-status" class="tag">0 of 4 clips ready</span>
+    </div>
+    <p class="panel-note">Each shot is written for you and stays editable. Edit the text, then make the frame and the clip.</p>
+    <div id="shots" class="shots"></div>
+  </section>
+
+  <section id="film-panel" class="panel" hidden>
+    <div class="panel-head">
+      <h2><span class="step">3</span> The film</h2>
+      <span id="film-status" class="tag">Waiting for the clips</span>
+    </div>
+    <div class="row">
+      <label class="field"><span>Brand name on the ending</span><input id="brand" maxlength="100" value="EVERKNIT"></label>
+      <label class="field"><span>Closing line</span><input id="endline" maxlength="180" placeholder="Explore our pique collection."></label>
+    </div>
+    <div class="row">
+      <div class="field"><span>Captions</span><div id="captions" class="chips"></div></div>
+      <div class="field"><span>Music</span><div id="music" class="chips"></div></div>
+      <div class="field"><span>Between shots</span><div id="transition" class="chips"></div></div>
+    </div>
+    <div class="actions">
+      <button id="export" class="primary" type="button">Stitch the film</button>
+      <span id="export-note" class="note"></span>
+    </div>
+    <div id="export-result" class="result" hidden>
+      <video id="result-video" controls playsinline></video>
+      <a id="result-link" class="primary" download>Download the film</a>
+    </div>
+  </section>
+
+  <p class="footer-note">Application imagery is illustrative. Check colour, texture, drape and proportions against a physical sample before anything goes to a buyer.</p>
+</main>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

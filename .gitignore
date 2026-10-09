@@ -1,0 +1,16 @@
+# Secrets — never commit these
+.env
+.env.local
+.env*.local
+
+# Dependencies
+node_modules/
+
+# Vercel
+.vercel
+
+# Working files
+render/
+smoke-out/
+*.log
+.DS_Store

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "functions": {
+    "api/export.js": {
+      "maxDuration": 300,
+      "memory": 2048,
+      "includeFiles": "node_modules/{ffmpeg-static,ffprobe-static,dejavu-fonts-ttf}/**"
+    },
+    "api/storyboard.js": {
+      "maxDuration": 120
+    },
+    "api/keyframe.js": {
+      "maxDuration": 180,
+      "memory": 1024
+    },
+    "api/clip.js": {
+      "maxDuration": 120
+    },
+    "api/clip-status.js": {
+      "maxDuration": 180
+    }
+  }
+}
