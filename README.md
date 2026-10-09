@@ -76,6 +76,32 @@ finds the URL, and every request spends real credits.
 
 ---
 
+## The class code
+
+Nothing generates this. **You invent it.** It is a single shared password for the whole class, and
+it is the only thing standing between a public URL and your model credits.
+
+1. Pick something not worth guessing but easy to read out loud — `everknit-pique-2026`, not `1234`.
+2. Put it in `ACCESS_CODE`.
+   - Deployed: Vercel → **Settings → Environment Variables** → add `ACCESS_CODE` → redeploy.
+   - Local: `vercel env pull`, or just put it in `.env.local`.
+3. Give it to the class once. Each student types it on their first visit; the browser remembers it.
+
+How it behaves:
+
+| `ACCESS_CODE` | What happens |
+|---|---|
+| **unset** | The page opens straight away and asks for nothing. Fine for `vercel dev`, dangerous in public: every request from anyone is accepted. |
+| **set** | The page asks for the code and rejects every other value (compared with a constant-time check). |
+
+Change it later and everyone who already entered the old code is asked again — nothing else is lost,
+because no accounts exist to break.
+
+The page decides whether to show the door by calling `GET /api/prompt` on load: a `401` means a code
+is expected, a `200` means there is none. So the two can never drift out of sync.
+
+---
+
 ## Run the smoke test before you deploy
 
 ```bash

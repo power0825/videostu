@@ -400,15 +400,34 @@ $('reset').addEventListener('click', () => {
   refreshFilmState();
 });
 
-async function loadPrompt() {
+// Asks the server whether a class code is expected at all, and picks up the prompt text in the
+// same round trip. If ACCESS_CODE has not been configured there is no lock on the door, so the
+// studio opens straight away rather than asking for a code that would accept anything.
+async function boot() {
+  let response;
   try {
-    const response = await fetch('/api/prompt', { headers: { 'x-access-code': state.code || '' } });
-    if (!response.ok) return;
+    response = await fetch('/api/prompt', { headers: { 'x-access-code': state.code || '' } });
+  } catch {
+    showGate('The studio could not be reached. Check the connection and try again.');
+    return;
+  }
+  if (response.status === 401) {
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {}
+    showGate(data && data.needsCode ? 'That class code was not right.' : '');
+    return;
+  }
+  if (!response.ok) {
+    showGate('The studio is not ready yet. Try again in a moment.');
+    return;
+  }
+  try {
     const data = await response.json();
     if (data.system) $('storyboard-prompt').textContent = data.system;
-  } catch {
-    // The reveal simply stays empty; nothing else depends on it.
-  }
+  } catch {}
+  showApp();
 }
 
 $('gate-form').addEventListener('submit', async (event) => {
@@ -417,24 +436,11 @@ $('gate-form').addEventListener('submit', async (event) => {
   if (!code) return;
   state.code = code;
   save();
-  try {
-    await api('/api/storyboard', { brief: '' });
-    showApp();
-    loadPrompt();
-  } catch (error) {
-    if (String(error.message).includes('class code')) return;
-    // Anything other than a rejected code means the gate accepted us: the server only complains
-    // about the empty brief after the code has been let through.
-    showApp();
-    loadPrompt();
-  }
+  await boot();
 });
 
 renderBrief();
 renderShots();
 renderControls();
 refreshFilmState();
-if (state.code) {
-  showApp();
-  loadPrompt();
-} else showGate();
+boot();

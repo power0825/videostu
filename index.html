@@ -9,14 +9,17 @@
 </head>
 <body>
 
-<div id="gate" class="gate" hidden>
+<!-- Visible from the first paint so the page is never blank while boot() asks the server whether a
+     code is expected at all. It is hidden again as soon as boot() succeeds. -->
+<div id="gate" class="gate">
   <form id="gate-form" class="gate-card">
     <span class="eyebrow">EVERKNIT · CLASSROOM</span>
     <h1>Enter the class code</h1>
-    <p>The code is given out in the session. It keeps this link from being used by anyone who stumbles onto it.</p>
+    <p>Your instructor sets one code for the whole class and gives it out in the session. It keeps this link from being used by anyone who stumbles onto it.</p>
     <input id="gate-code" type="password" autocomplete="off" placeholder="Class code" required>
     <button class="primary" type="submit">Open the studio</button>
     <p id="gate-error" class="gate-error" role="alert"></p>
+    <p class="gate-hint">No code yet? If the deployment has none configured, this door has no lock on it — tell whoever set it up to add one.</p>
   </form>
 </div>
 
