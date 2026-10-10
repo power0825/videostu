@@ -29,8 +29,15 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .gate-card h1 { font-size: 24px; margin-bottom: 12px; }
 .gate-card p { font-size: 14px; line-height: 1.7; color: var(--muted); margin-bottom: 18px; }
 .gate-card input { width: 100%; border: 1px solid #dce3ed; border-radius: 8px; padding: 13px; margin-bottom: 14px; }
+/* Plain text, deliberately. This is a classroom door, not a credential, and every character that
+   stays visible is one that cannot be mistyped unnoticed. A monospace face makes the giveaway
+   obvious too: a full-width ＊ is twice as wide as a real *. */
+.gate-card input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace; font-size: 15px; letter-spacing: 0.5px; }
 .gate-card button { width: 100%; }
 .gate-error { color: var(--bad); font-size: 13px; margin-top: 12px; min-height: 18px; }
+.gate-detail { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 6px !important; }
+.gate-card button.link { width: auto; background: none; border: 0; padding: 0; margin-bottom: 14px; color: var(--blue); font-size: 12px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.gate-card button.link:hover { background: none; }
 .gate-hint { font-size: 12px; color: #97a1b2; line-height: 1.6; margin-top: 4px; margin-bottom: 0; }
 
 /* shell */

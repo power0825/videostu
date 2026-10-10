@@ -51,11 +51,14 @@ function showApp() {
   gateShown = false;
 }
 
+// The code rides in the body as well as in the header. A header can only carry ASCII bytes, so a
+// code typed with a keyboard in full-width mode would be mangled on the way; a JSON body is UTF-8
+// and delivers exactly what was typed. The server accepts either, and prefers the body.
 async function api(path, body) {
   const response = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-access-code': state.code || '' },
-    body: JSON.stringify(body || {}),
+    body: JSON.stringify({ ...(body || {}), accessCode: state.code || '' }),
   });
   let data = null;
   try {
@@ -406,7 +409,11 @@ $('reset').addEventListener('click', () => {
 async function boot() {
   let response;
   try {
-    response = await fetch('/api/prompt', { headers: { 'x-access-code': state.code || '' } });
+    response = await fetch('/api/prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-access-code': state.code || '' },
+      body: JSON.stringify({ accessCode: state.code || '' }),
+    });
   } catch {
     showGate('The studio could not be reached. Check the connection and try again.');
     return;
@@ -416,7 +423,11 @@ async function boot() {
     try {
       data = await response.json();
     } catch {}
-    showGate(data && data.needsCode ? 'That class code was not right.' : '');
+    // Only call it a wrong code when a code was actually offered. On a first visit the field is
+    // simply empty, and telling someone their code is wrong before they have typed one is a lie
+    // that sends them looking for a problem that is not there.
+    const attempted = String(state.code || '').length > 0;
+    showGate(attempted && data && data.needsCode ? 'That class code was not right.' : '');
     return;
   }
   if (!response.ok) {
@@ -430,6 +441,39 @@ async function boot() {
   showApp();
 }
 
+// Asks the server why a code was turned away. The reply describes the lengths of the two values
+// and a few things that go wrong when a value is pasted into a hosting dashboard - never the
+// values themselves, so this stays safe to run in front of the class.
+//
+// The length is the useful part. When the door refuses a code that looks right, the usual cause is
+// that the browser sent something other than what the person typed: a saved password filled in by
+// the browser's password manager, or a stray character picked up along the way. Comparing the two
+// counts says which of those it is, without either value ever being printed.
+async function explainRejection(code) {
+  try {
+    const response = await fetch('/api/access-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-access-code': code || '' },
+      body: JSON.stringify({ accessCode: code || '' }),
+    });
+    if (!response.ok) return '';
+    const data = await response.json();
+    const seen = 'the page sent ' + data.received.characters + ' characters, the saved code has '
+      + data.stored.characters + (data.receivedLooksFullWidth ? ', and the text that arrived was not plain ASCII' : '')
+      + ' — serving from ' + data.deployment.environment;
+    return (data.hint ? data.hint + '  ' : '') + '(' + seen + ')';
+  } catch {
+    return '';
+  }
+}
+
+$('gate-check').addEventListener('click', async () => {
+  const detail = $('gate-detail');
+  detail.textContent = 'Checking…';
+  detail.textContent = (await explainRejection($('gate-code').value.trim()))
+    || 'The studio could not be reached to check. Reload the page and try again.';
+});
+
 $('gate-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const code = $('gate-code').value.trim();
@@ -437,6 +481,14 @@ $('gate-form').addEventListener('submit', async (event) => {
   state.code = code;
   save();
   await boot();
+  if (!gateShown) return;
+  // Refused. Explain it straight away rather than waiting to be asked. The field is left as it is
+  // and selected, so the text that was actually sent stays visible - seeing it is how a full-width
+  // character or a stray space gets noticed, and hiding it is what made those invisible.
+  const explanation = await explainRejection(code);
+  if (explanation) $('gate-detail').textContent = explanation;
+  $('gate-code').focus();
+  $('gate-code').select();
 });
 
 renderBrief();

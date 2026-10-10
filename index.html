@@ -16,9 +16,11 @@
     <span class="eyebrow">EVERKNIT · CLASSROOM</span>
     <h1>Enter the class code</h1>
     <p>Your instructor sets one code for the whole class and gives it out in the session. It keeps this link from being used by anyone who stumbles onto it.</p>
-    <input id="gate-code" type="password" autocomplete="off" placeholder="Class code" required>
+    <input id="gate-code" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Class code" required>
     <button class="primary" type="submit">Open the studio</button>
     <p id="gate-error" class="gate-error" role="alert"></p>
+    <p id="gate-detail" class="gate-detail"></p>
+    <button id="gate-check" class="link" type="button">Not working? Check the code</button>
     <p class="gate-hint">No code yet? If the deployment has none configured, this door has no lock on it — tell whoever set it up to add one.</p>
   </form>
 </div>
