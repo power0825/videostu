@@ -118,7 +118,14 @@ async function api(path, body) {
     showGate('That class code was not right.');
     throw new Error('That class code was not right.');
   }
-  if (!response.ok) throw new Error((data && data.error) || 'The request failed (' + response.status + ').');
+  if (!response.ok) {
+    // 413 comes from the platform, not from this app, and its own body is unreadable - say what it
+    // actually means rather than reporting a bare status code.
+    const fallback = response.status === 413
+      ? 'That file is too large to upload — the platform rejects request bodies over 4.5MB. Try a smaller image.'
+      : 'The request failed (' + response.status + ').';
+    throw new Error((data && data.error) || fallback);
+  }
   return data || {};
 }
 
@@ -170,8 +177,30 @@ function setStatus(index, text, bad) {
   }
 }
 
+// createImageBitmap is the fast path, but it rejects formats the browser can still display through
+// an ordinary <img> - some CMYK JPEGs, for instance. Falling back costs nothing and turns "that file
+// could not be read" into a working upload.
+async function decodeImage(file) {
+  try {
+    return await createImageBitmap(file);
+  } catch {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      await new Promise((ok, no) => {
+        img.onload = ok;
+        img.onerror = () => no(new Error('That image could not be read. Use a PNG, JPEG or WebP file.'));
+        img.src = url;
+      });
+      return img;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+}
+
 async function shrinkImage(file, max = 1600, quality = 0.85) {
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await decodeImage(file);
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const width = Math.max(1, Math.round(bitmap.width * scale));
   const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -612,19 +641,25 @@ async function pickUpload(input) {
     }
 
     const uploadKind = kind === 'music' ? 'music' : kind === 'logo' ? 'logo' : 'frame';
-    const { url } = await api('/api/asset', { kind: uploadKind, dataUrl });
+    const result = await api('/api/asset', { kind: uploadKind, dataUrl });
+    const url = result.url;
     if (kind === 'logo') state.logoUrl = url;
     else if (kind === 'music') { state.musicUrl = url; state.music = 'upload'; }
     else if (index !== null) state.shots[index][kind === 'last' ? 'lastFrameUrl' : 'firstFrameUrl'] = url;
     save();
     setBusy('');
+    // The message goes where the person is looking. Reporting an upload only in the bar at the top
+    // of the page means that, on a stage this long, the answer is off screen and the button looks
+    // like it did nothing at all.
     render();
-    setAlert(kind === 'music'
-      ? 'Track uploaded and selected. It is looped to cover the whole film.'
-      : kind === 'logo' ? 'Logo uploaded. It sits on the final two seconds.'
-        : 'Frame uploaded.');
+    const size = result.bytes ? Math.round(result.bytes / 1024) + 'KB' : 'ready';
+    if (index !== null) setStatus(index, 'Frame uploaded (' + size + ').', false);
+    else setAlert(kind === 'music'
+      ? 'Track uploaded (' + size + ') and selected. It is looped to cover the whole film.'
+      : 'Logo uploaded (' + size + '). It sits on the final two seconds.');
   } catch (error) {
     setBusy('');
+    if (index !== null) setStatus(index, error.message, true);
     setAlert(error.message, true);
   }
 }
@@ -940,8 +975,23 @@ async function boot() {
     const data = await response.json();
     const prompt = $('storyboard-prompt');
     if (prompt && data.system) prompt.textContent = data.system;
+    warnAboutSetup(data.configured);
   } catch {}
   showApp();
+}
+
+// An unfinished deployment should say so on load. Finding out that storage was never connected by
+// pressing Upload and watching nothing happen is a much worse way to learn it.
+function warnAboutSetup(configured) {
+  if (!configured) return;
+  const missing = [];
+  if (!configured.storage) missing.push('Blob storage (Storage → Blob), which uploads and every generated image need');
+  if (!configured.text) missing.push('VOLCENGINE_API_KEY and VOLCENGINE_TEXT_MODEL, which plan the shots');
+  if (!configured.image) missing.push('VOLCENGINE_API_KEY, which draws the frames');
+  if (!configured.video) missing.push('BAILIAN_API_KEY, which generates the clips');
+  if (!missing.length) return;
+  setAlert('This deployment is not finished: it still needs ' + missing.join('; ') +
+    '. Add them in the Vercel project settings and redeploy — environment variables only reach a new deployment.', true);
 }
 
 // Asks the server why a code was turned away. The reply describes the lengths of the two values
