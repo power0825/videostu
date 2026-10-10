@@ -13,7 +13,7 @@ import {createServer} from 'node:http';
 import {readFileSync, writeFileSync, mkdirSync, existsSync, rmSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {join, resolve} from 'node:path';
-import {renderFilm, fontPath, FFMPEG, FFPROBE, buildCues} from '../lib/render.mjs';
+import {renderFilm, fontFiles, FFMPEG, FFPROBE, buildCues} from '../lib/render.mjs';
 
 const OUT = resolve('smoke-out');
 rmSync(OUT, {recursive: true, force: true});
@@ -24,8 +24,9 @@ const step = (n, text) => say('\n[' + n + '] ' + text);
 
 say('ffmpeg  : ' + FFMPEG);
 say('ffprobe : ' + FFPROBE);
-const font = fontPath();
-say('font    : ' + (font || 'NONE FOUND — captions will be skipped or drawn as boxes'));
+const fonts = fontFiles();
+say('font    : ' + (fonts.sans || 'NONE FOUND — captions will be skipped or drawn as boxes'));
+say('serif   : ' + (fonts.serif || 'none — the serif caption preset falls back to the sans face'));
 
 step(1, 'Making four synthetic clips');
 const durations = [3, 4, 3, 5];
@@ -60,6 +61,8 @@ const port = server.address().port;
 step(3, 'Running the export pipeline');
 const shots = durations.map((seconds, index) => ({
   duration: seconds,
+  // One shot is trimmed so this run also covers the trim path, not just the default of zero.
+  trimStart: index === 1 ? 0.5 : 0,
   caption: ['Material in motion', 'Fabric becomes a polo', 'Crafted detail', 'Everyday style'][index],
   clipUrl: 'http://127.0.0.1:' + port + '/clip' + index + '.mp4',
 }));
@@ -70,10 +73,11 @@ const result = await renderFilm({
   aspect: '16:9',
   transition: 'cut',
   subtitles: true,
+  captionStyle: 'editorial',
   brand: 'EVERKNIT',
   endLine: 'Explore our pique collection.',
   music: 'ambient',
-  fontFile: font,
+  fonts,
 });
 const seconds = ((Date.now() - started) / 1000).toFixed(1);
 const finalPath = join(OUT, 'final.mp4');

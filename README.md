@@ -249,6 +249,20 @@ empty boxes for a font name it cannot resolve. This app therefore ships `dejavu-
 points ffmpeg's `fontsdir` at a copy inside the working directory. To use your own font, drop a
 `.ttf` at `fonts/caption.ttf` or set `CAPTION_FONT_FILE`.
 
+**Four caption styles, ported from the classroom studio.** Clean white, bar behind text, uppercase
+with wide spacing, and serif. Each is defined as a share of the frame height, so a preset reads the
+same on a 720p and a 1080p canvas. The studio's own faces - Segoe UI Semibold and Georgia - do not
+exist on Linux, so the bundled DejaVu faces stand in: weight, letter spacing, outline, shadow, box
+and margins are what each preset is actually made of, and those are ported exactly. The serif preset
+uses `DejaVuSerif.ttf` from the same package; override it with `CAPTION_SERIF_FONT` or
+`CAPTION_SERIF_FONT_FILE`.
+
+**Uploads are capped at 3MB.** Frames, the end logo and a music bed all arrive as base64 inside a
+JSON body, because a serverless function cannot accept more than 4.5MB in one request and this app
+has no client-side build step to do a direct-to-Blob upload. Images are shrunk in the browser first,
+which is what keeps them well inside that. Video is deliberately not offered: an MP4 cannot fit
+through a function body, so clips come from the video service instead.
+
 **A function's disk is wiped when it returns.** Everything the export writes goes to `/tmp` and the
 finished file is uploaded to Blob before the function ends. Nothing is written inside the project.
 
