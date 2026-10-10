@@ -7,6 +7,14 @@
   --bad: #a14b42;
 }
 * { box-sizing: border-box; }
+
+/* The one rule this stylesheet cannot do without. The browser's own `[hidden] { display: none }`
+   comes from the user-agent sheet, and any author rule that sets `display` beats it outright -
+   specificity never enters into it. So `.gate { display: grid }` silently cancelled
+   `gate.hidden = true`, and the door stayed painted over the top of a studio that had already
+   opened behind it. Every element toggled with the hidden attribute depends on this line. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
